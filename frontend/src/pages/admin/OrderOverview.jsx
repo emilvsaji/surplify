@@ -89,7 +89,7 @@ const OrderOverview = () => {
                       {order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}
                     </td>
                     <td className="px-6 py-4 font-medium text-gray-900">
-                      ${order.totalAmount?.toFixed(2)}
+                      ₹{order.totalAmount?.toFixed(2)}
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge status={order.orderStatus} />

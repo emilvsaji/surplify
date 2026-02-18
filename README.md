@@ -2,19 +2,23 @@
 
 > Save Food. Save Money. Save the Planet.
 
-Surplify is a full-stack web application that connects restaurants and hotels with consumers by listing surplus food at discounted prices — reducing food waste while offering great deals.
+Surplify connects restaurants and hotels with customers by listing surplus food at discounted prices. The stack is split into a Flask REST API with MongoDB plus a React/Vite/Tailwind frontend.
+
+If you want step-by-step install/run instructions, see the dedicated setup guide in [SETUP.md](SETUP.md).
 
 ---
 
-## 🏗 Tech Stack
+## 🏗 Architecture
 
-| Layer      | Technology                      |
-|------------|----------------------------------|
-| Frontend   | React 18, Vite, Tailwind CSS     |
-| Backend    | Python Flask, Flask-JWT-Extended |
-| Database   | MongoDB Atlas                    |
-| Real-Time  | Socket.IO                        |
-| Charts     | Recharts                         |
+- **Frontend**: React 18 + Vite, Tailwind CSS, React Router, Socket.IO client, Recharts.
+- **Backend**: Flask 3, JWT auth, Flask-PyMongo, Socket.IO server.
+- **Database**: MongoDB (Atlas or local).
+- **Real-time**: Socket.IO events for food/order updates.
+
+### High-level flow
+1) Customers browse `/api/foods`, add to cart, and place orders.
+2) Shop owners register shops, add/manage food, fulfill orders, and view analytics.
+3) Admins approve shops, manage users/shops/orders, and view platform analytics.
 
 ---
 
@@ -23,204 +27,144 @@ Surplify is a full-stack web application that connects restaurants and hotels wi
 ```
 Surplify/
 ├── backend/
-│   ├── routes/
-│   │   ├── auth_routes.py
-│   │   ├── user_routes.py
-│   │   ├── shop_routes.py
-│   │   └── admin_routes.py
-│   ├── utils/
-│   │   ├── decorators.py
-│   │   └── helpers.py
-│   ├── app.py
-│   ├── config.py
-│   ├── run.py
-│   ├── seed_admin.py
-│   ├── requirements.txt
-│   └── .env (gitignored)
+│   ├── routes/            # Auth, user, shop, admin route handlers
+│   ├── utils/             # Decorators, helpers, validation
+│   ├── app.py             # App factory and blueprint registration
+│   ├── config.py          # Configuration via env vars
+│   ├── run.py             # SocketIO server entrypoint
+│   ├── seed_admin.py      # Seeds default admin account
+│   └── requirements.txt   # Backend Python deps
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── components/
-│   │   │   ├── common/
-│   │   │   │   ├── FoodCard.jsx
-│   │   │   │   ├── LoadingSpinner.jsx
-│   │   │   │   ├── ProtectedRoute.jsx
-│   │   │   │   ├── StatCard.jsx
-│   │   │   │   └── StatusBadge.jsx
-│   │   │   └── layout/
-│   │   │       ├── DashboardLayout.jsx
-│   │   │       ├── DashboardSidebar.jsx
-│   │   │       ├── Footer.jsx
-│   │   │       └── Navbar.jsx
-│   │   ├── context/
-│   │   │   ├── AuthContext.jsx
-│   │   │   └── CartContext.jsx
-│   │   ├── pages/
-│   │   │   ├── public/
-│   │   │   │   ├── Home.jsx
-│   │   │   │   ├── BrowseFood.jsx
-│   │   │   │   ├── Login.jsx
-│   │   │   │   └── Register.jsx
-│   │   │   ├── user/
-│   │   │   │   ├── UserDashboard.jsx
-│   │   │   │   ├── MyOrders.jsx
-│   │   │   │   └── Cart.jsx
-│   │   │   ├── shop/
-│   │   │   │   ├── RegisterShop.jsx
-│   │   │   │   ├── ManageFood.jsx
-│   │   │   │   ├── ShopOrders.jsx
-│   │   │   │   └── ShopAnalytics.jsx
-│   │   │   └── admin/
-│   │   │       ├── AdminDashboard.jsx
-│   │   │       ├── UserManagement.jsx
-│   │   │       ├── ShopManagement.jsx
-│   │   │       └── OrderOverview.jsx
-│   │   ├── services/
-│   │   │   └── api.js
-│   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   └── index.css
-│   ├── index.html
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   └── .env (gitignored)
+│   │   ├── components/    # UI building blocks
+│   │   ├── context/       # Auth/cart providers
+│   │   ├── pages/         # Route-level screens (public/user/shop/admin)
+│   │   ├── services/api.js# Axios instance with JWT interceptor
+│   │   └── App.jsx        # Routing + layouts
+│   ├── package.json       # Frontend deps & scripts
+│   └── vite.config.js     # Vite config
 │
-├── .gitignore
-└── README.md
+├── README.md              # Project overview (this file)
+└── SETUP.md               # Full setup & run guide
 ```
 
 ---
 
-## 🚀 Setup Instructions
-
-### Prerequisites
+## 🔧 Prerequisites
 
 - Python 3.9+
 - Node.js 18+
-- MongoDB Atlas (free tier works)
+- MongoDB (Atlas URI or local instance)
 
 ---
 
-### 1. Backend Setup
+## ⚙️ Environment Variables
 
-```bash
-cd backend
+Backend (`backend/.env`):
 
-# Create virtual environment
-python -m venv venv
-
-# Activate (Windows)
-venv\Scripts\activate
-
-# Activate (Mac/Linux)
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
+```
+MONGO_URI=mongodb+srv://<user>:<pass>@cluster0.xxxxx.mongodb.net/surplify
+JWT_SECRET_KEY=change-this-in-production
 ```
 
-Configure environment variables (create a `.env` file — this file is gitignored):
+Frontend (`frontend/.env`):
 
-```env
-MONGO_URI=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/surplify?retryWrites=true&w=majority
-JWT_SECRET_KEY=your-secret-key-here
 ```
-
-Seed the admin user:
-
-```bash
-python seed_admin.py
+VITE_API_URL=http://localhost:5000/api
 ```
-
-Start the backend server:
-
-```bash
-python run.py
-```
-
-Backend default: `http://localhost:5000`
 
 ---
 
-### 2. Frontend Setup
+## 🚀 Quick Start (summary)
 
-```bash
-cd frontend
+1) Backend
+	- `cd backend`
+	- `python -m venv venv` and activate
+	- `pip install -r requirements.txt`
+	- create `.env` (see above) and run `python seed_admin.py`
+	- `python run.py` → http://localhost:5000
 
-# Install dependencies
-npm install
+2) Frontend
+	- `cd frontend`
+	- `npm install`
+	- create `.env` (see above)
+	- `npm run dev` → http://localhost:3000
 
-# Start dev server
-npm run dev
-```
-
-Frontend default: `http://localhost:3000`
-
----
-
-## 👥 User Roles & Credentials
-
-| Role       | Email               | Password   |
-|------------|---------------------|------------|
-| Admin      | admin@surplify.com  | admin123   |
-| Shop Owner | *(register new)*    | —          |
-| Customer   | *(register new)*    | —          |
+Full step-by-step instructions live in [SETUP.md](SETUP.md).
 
 ---
 
-## 🔑 API Endpoints (overview)
+## 👥 Roles & Default Access
+
+| Role | How to access |
+|------|---------------|
+| Admin | Login with `admin@surplify.com` / `admin123` (seeded) |
+| Shop Owner | Register, then request approval from Admin |
+| Customer | Self-register via UI |
+
+---
+
+## 🔑 API Surface (overview)
 
 ### Auth
-| Method | Endpoint             | Description       |
-|--------|----------------------|-------------------|
-| POST   | `/api/auth/register` | Register user     |
-| POST   | `/api/auth/login`    | Login             |
-| GET    | `/api/auth/me`       | Get current user  |
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/api/auth/register` | Register user |
+| POST | `/api/auth/login` | Login and receive JWT |
+| GET  | `/api/auth/me` | Current user profile |
 
 ### User (Customer)
-| Method | Endpoint                  | Description            |
-|--------|---------------------------|------------------------|
-| GET    | `/api/foods`              | Browse available food  |
-| GET    | `/api/foods/:id`          | Food item details      |
-| POST   | `/api/orders`             | Place order            |
-| GET    | `/api/my-orders`          | View order history     |
-| PUT    | `/api/orders/:id/cancel`  | Cancel pending order   |
-| POST   | `/api/shops/:id/rate`     | Rate a shop            |
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/foods` | Browse available food |
+| GET | `/api/foods/:id` | Food details |
+| POST | `/api/orders` | Place order |
+| GET | `/api/my-orders` | Order history |
+| PUT | `/api/orders/:id/cancel` | Cancel pending order |
 
 ### Shop Owner
-| Method | Endpoint                    | Description          |
-|--------|-----------------------------|----------------------|
-| POST   | `/api/shop/register`        | Register shop        |
-| GET    | `/api/shop/my-shop`         | Get shop details     |
-| POST   | `/api/shop/food/add`        | Add food item        |
-| PUT    | `/api/shop/food/:id`        | Update food item     |
-| DELETE | `/api/shop/food/:id`        | Delete food item     |
-| GET    | `/api/shop/foods`           | List shop foods      |
-| GET    | `/api/shop/orders`          | View shop orders     |
-| PUT    | `/api/shop/order/status/:id`| Update order status  |
-| GET    | `/api/shop/analytics`       | Shop analytics       |
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/api/shop/register` | Register shop |
+| GET | `/api/shop/my-shop` | Get shop details |
+| POST | `/api/shop/food/add` | Add food item |
+| PUT | `/api/shop/food/:id` | Update food item |
+| DELETE | `/api/shop/food/:id` | Delete food item |
+| GET | `/api/shop/foods` | List shop foods |
+| GET | `/api/shop/orders` | Shop orders |
+| PUT | `/api/shop/order/status/:id` | Update order status |
+| GET | `/api/shop/analytics` | Shop analytics |
 
 ### Admin
-| Method | Endpoint                       | Description         |
-|--------|--------------------------------|---------------------|
-| GET    | `/api/admin/users`             | All users           |
-| GET    | `/api/admin/shops`             | All shops           |
-| PUT    | `/api/admin/approve-shop/:id`  | Approve/reject shop |
-| PUT    | `/api/admin/block-user/:id`    | Block/unblock user  |
-| PUT    | `/api/admin/block-shop/:id`    | Block/unblock shop  |
-| GET    | `/api/admin/orders`            | All orders          |
-| GET    | `/api/admin/analytics`         | Platform analytics  |
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/admin/users` | All users |
+| GET | `/api/admin/shops` | All shops |
+| PUT | `/api/admin/approve-shop/:id` | Approve/reject shop |
+| PUT | `/api/admin/block-user/:id` | Block/unblock user |
+| PUT | `/api/admin/block-shop/:id` | Block/unblock shop |
+| GET | `/api/admin/orders` | All orders |
+| GET | `/api/admin/analytics` | Platform analytics |
 
 ---
 
-## ✨ Features
+## ✨ Feature Highlights
 
-- JWT Authentication with role-based access control
-- Real-time updates via Socket.IO
-- Dynamic dashboards — all data from MongoDB
-- Responsive UI with Tailwind CSS
-- Cart system, order lifecycle, shop analytics, rating system, search & filter
+- Role-based auth (customer, shopowner, admin) with JWT
+- Shop registration/approval workflow
+- Food listing, stock control, and activation toggles
+- Cart and checkout flow with order lifecycle (pending → confirmed → ready → completed/cancelled)
+- Real-time Socket.IO broadcasts for food/order updates
+- Analytics dashboards (shop + admin) with Recharts visualizations
+- Responsive UI with Tailwind and protected routes per role
+
+---
+
+## 🧪 Testing & Quality
+
+- There are no automated tests yet. Recommended: add pytest for backend and React Testing Library for frontend.
+- Lint/format: not configured; add flake8/black for backend and eslint/prettier for frontend if desired.
 
 ---
 

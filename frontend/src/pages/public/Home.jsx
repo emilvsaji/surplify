@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import {
   HiOutlineShoppingBag,
   HiOutlineClock,
-  HiOutlineCurrencyDollar,
+  HiOutlineCurrencyRupee,
   HiOutlineGlobeAlt,
   HiOutlineArrowRight,
   HiOutlineSparkles,
@@ -13,7 +13,7 @@ import {
 const Home = () => {
   const features = [
     {
-      icon: HiOutlineCurrencyDollar,
+      icon: HiOutlineCurrencyRupee,
       title: 'Save Up to 70%',
       desc: 'Get quality restaurant food at a fraction of the original price.',
       color: 'primary',
