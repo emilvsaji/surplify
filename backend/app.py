@@ -17,7 +17,8 @@ def create_app():
     mongo.init_app(app)
     jwt.init_app(app)
     CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
-    socketio.init_app(app, cors_allowed_origins="*", async_mode="eventlet")
+    # Using 'threading' mode to support Python 3.13; 'eventlet' is incompatible
+    socketio.init_app(app, cors_allowed_origins="*", async_mode="threading")
 
     # Register blueprints
     from routes.auth_routes import auth_bp
