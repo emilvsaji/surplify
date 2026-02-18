@@ -70,13 +70,9 @@ const FoodCard = ({ food, onAddToCart, showCartBtn = true }) => {
         {/* Price & Action */}
         <div className="flex items-end justify-between mt-auto">
           <div>
-            <span className="text-lg font-bold text-primary-700">
-              ${food.discountedPrice?.toFixed(2)}
-            </span>
+            <span className="text-lg font-bold text-primary-700">₹{food.discountedPrice?.toFixed(2)}</span>
             {food.originalPrice > food.discountedPrice && (
-              <span className="ml-2 text-sm text-gray-400 line-through">
-                ${food.originalPrice?.toFixed(2)}
-              </span>
+              <span className="ml-2 text-sm text-gray-400 line-through">₹{food.originalPrice?.toFixed(2)}</span>
             )}
           </div>
           {showCartBtn && food.quantityAvailable > 0 && onAddToCart && (

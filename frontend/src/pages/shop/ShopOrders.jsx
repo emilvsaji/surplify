@@ -121,7 +121,7 @@ const ShopOrders = () => {
                           {item.foodName} × {item.quantity}
                         </span>
                         <span className="text-gray-900 font-medium">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          ₹{(item.price * item.quantity).toFixed(2)}
                         </span>
                       </div>
                     ))}
@@ -129,7 +129,7 @@ const ShopOrders = () => {
 
                   <div className="mt-3 pt-2 border-t border-gray-100 flex items-center justify-between">
                     <span className="text-sm text-gray-500">Total</span>
-                    <span className="font-bold text-primary-700">${order.totalAmount?.toFixed(2)}</span>
+                    <span className="font-bold text-primary-700">₹{order.totalAmount?.toFixed(2)}</span>
                   </div>
                 </div>
 

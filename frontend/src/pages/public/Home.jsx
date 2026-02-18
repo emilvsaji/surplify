@@ -56,10 +56,10 @@ const Home = () => {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-extrabold text-gray-900 leading-tight">
-              Save Food.{' '}
-              <span className="text-gradient">Save Money.</span>
+              Save Food {' '}
+              <span className="text-gradient">Save Money</span>
               <br />
-              Save the Planet.
+              Save the Planet
             </h1>
 
             <p className="mt-6 text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto">

@@ -2,7 +2,14 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import mongo, socketio
 from utils.decorators import role_required
-from utils.helpers import serialize_doc
+from utils.helpers import (
+    serialize_doc,
+    success_response,
+    error_response,
+    ensure_objectid,
+    validate_required,
+    validate_positive_number,
+)
 from bson import ObjectId
 from datetime import datetime
 
@@ -51,20 +58,24 @@ def get_foods():
                 "city": shop["city"],
             }
 
-    return jsonify({
+    return success_response("Foods fetched", {
         "foods": serialize_doc(foods),
         "total": total,
         "page": page,
         "pages": (total + limit - 1) // limit
-    }), 200
+    })
 
 
 @user_bp.route("/foods/<food_id>", methods=["GET"])
 def get_food_detail(food_id):
     """Get single food item details."""
-    food = mongo.db.food_items.find_one({"_id": ObjectId(food_id)})
+    oid = ensure_objectid(food_id)
+    if not oid:
+        return error_response("Invalid food id", 400)
+
+    food = mongo.db.food_items.find_one({"_id": oid})
     if not food:
-        return jsonify({"error": "Food item not found"}), 404
+        return error_response("Food item not found", 404)
 
     shop = mongo.db.shops.find_one({"_id": food["shopId"]})
     if shop:
@@ -76,7 +87,7 @@ def get_food_detail(food_id):
             "locationCoordinates": shop.get("locationCoordinates", {}),
         })
 
-    return jsonify({"food": serialize_doc(food)}), 200
+    return success_response("Food fetched", {"food": serialize_doc(food)})
 
 
 @user_bp.route("/orders", methods=["POST"])
@@ -85,27 +96,35 @@ def get_food_detail(food_id):
 def place_order():
     """Place a new order."""
     user_id = get_jwt_identity()
-    data = request.get_json()
+    data = request.get_json() or {}
 
     if not data.get("items") or not data.get("shopId"):
-        return jsonify({"error": "Items and shopId are required"}), 400
+        return error_response("Items and shopId are required", 400)
 
-    shop = mongo.db.shops.find_one({"_id": ObjectId(data["shopId"])})
+    shop_oid = ensure_objectid(data.get("shopId"))
+    if not shop_oid:
+        return error_response("Invalid shop id", 400)
+
+    shop = mongo.db.shops.find_one({"_id": shop_oid})
     if not shop or shop.get("approvalStatus") != "approved":
-        return jsonify({"error": "Shop not found or not approved"}), 404
+        return error_response("Shop not found or not approved", 404)
 
     total_amount = 0
     order_items = []
 
     for item in data["items"]:
-        food = mongo.db.food_items.find_one({"_id": ObjectId(item["foodId"])})
+        food_oid = ensure_objectid(item.get("foodId"))
+        if not food_oid:
+            return error_response("Invalid food id in items", 400)
+
+        food = mongo.db.food_items.find_one({"_id": food_oid})
         if not food:
-            return jsonify({"error": f"Food item {item['foodId']} not found"}), 404
+            return error_response(f"Food item {item.get('foodId')} not found", 404)
         if food["quantityAvailable"] < item["quantity"]:
-            return jsonify({"error": f"Not enough stock for {food['foodName']}. Available: {food['quantityAvailable']}"}), 400
+            return error_response(f"Not enough stock for {food['foodName']}. Available: {food['quantityAvailable']}", 400)
 
         order_items.append({
-            "foodId": ObjectId(item["foodId"]),
+            "foodId": food_oid,
             "foodName": food["foodName"],
             "quantity": item["quantity"],
             "price": food["discountedPrice"],
@@ -116,7 +135,7 @@ def place_order():
     # Create order
     order_doc = {
         "userId": ObjectId(user_id),
-        "shopId": ObjectId(data["shopId"]),
+        "shopId": shop_oid,
         "items": order_items,
         "totalAmount": round(total_amount, 2),
         "orderStatus": "pending",
@@ -129,7 +148,7 @@ def place_order():
 
     # Update stock for each item
     for item in data["items"]:
-        food = mongo.db.food_items.find_one({"_id": ObjectId(item["foodId"])})
+        food = mongo.db.food_items.find_one({"_id": ensure_objectid(item["foodId"])})
         new_qty = food["quantityAvailable"] - item["quantity"]
         update = {"quantityAvailable": new_qty}
         if new_qty <= 0:
@@ -145,10 +164,9 @@ def place_order():
     })
     socketio.emit("dashboard_update", {"type": "new_order"})
 
-    return jsonify({
-        "message": "Order placed successfully",
+    return success_response("Order placed successfully", {
         "order": serialize_doc(order_doc)
-    }), 201
+    }, status=201)
 
 
 @user_bp.route("/my-orders", methods=["GET"])
@@ -165,7 +183,7 @@ def my_orders():
             order["shopName"] = shop["shopName"]
             order["shopAddress"] = shop["address"]
 
-    return jsonify({"orders": serialize_doc(orders)}), 200
+    return success_response("Orders fetched", {"orders": serialize_doc(orders)})
 
 
 @user_bp.route("/orders/<order_id>/cancel", methods=["PUT"])
@@ -174,12 +192,16 @@ def my_orders():
 def cancel_order(order_id):
     """Cancel an order (only if pending)."""
     user_id = get_jwt_identity()
-    order = mongo.db.orders.find_one({"_id": ObjectId(order_id), "userId": ObjectId(user_id)})
+    oid = ensure_objectid(order_id)
+    if not oid:
+        return error_response("Invalid order id", 400)
+
+    order = mongo.db.orders.find_one({"_id": oid, "userId": ObjectId(user_id)})
 
     if not order:
-        return jsonify({"error": "Order not found"}), 404
+        return error_response("Order not found", 404)
     if order["orderStatus"] != "pending":
-        return jsonify({"error": "Only pending orders can be cancelled"}), 400
+        return error_response("Only pending orders can be cancelled", 400)
 
     mongo.db.orders.update_one(
         {"_id": ObjectId(order_id)},
@@ -195,7 +217,7 @@ def cancel_order(order_id):
 
     socketio.emit("order_update", {"orderId": order_id, "status": "cancelled"})
 
-    return jsonify({"message": "Order cancelled successfully"}), 200
+    return success_response("Order cancelled successfully")
 
 
 @user_bp.route("/shops/<shop_id>/rate", methods=["POST"])
@@ -204,27 +226,30 @@ def cancel_order(order_id):
 def rate_shop(shop_id):
     """Rate a shop after pickup."""
     user_id = get_jwt_identity()
-    data = request.get_json()
+    data = request.get_json() or {}
 
     rating = data.get("rating", 0)
     review = data.get("review", "")
 
     if not 1 <= rating <= 5:
-        return jsonify({"error": "Rating must be between 1 and 5"}), 400
+        return error_response("Rating must be between 1 and 5", 400)
 
-    # Check if user has a completed order from this shop
+    shop_oid = ensure_objectid(shop_id)
+    if not shop_oid:
+        return error_response("Invalid shop id", 400)
+
     completed_order = mongo.db.orders.find_one({
         "userId": ObjectId(user_id),
-        "shopId": ObjectId(shop_id),
+        "shopId": shop_oid,
         "orderStatus": "completed"
     })
 
     if not completed_order:
-        return jsonify({"error": "You can only rate after completing an order"}), 400
+        return error_response("You can only rate after completing an order", 400)
 
     rating_doc = {
         "userId": ObjectId(user_id),
-        "shopId": ObjectId(shop_id),
+        "shopId": shop_oid,
         "rating": rating,
         "review": review,
         "createdAt": datetime.utcnow(),
@@ -248,4 +273,4 @@ def rate_shop(shop_id):
             {"$set": {"avgRating": round(result[0]["avgRating"], 1), "totalRatings": result[0]["count"]}}
         )
 
-    return jsonify({"message": "Rating submitted successfully"}), 200
+    return success_response("Rating submitted successfully")

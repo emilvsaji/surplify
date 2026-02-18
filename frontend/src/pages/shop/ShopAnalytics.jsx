@@ -3,7 +3,7 @@ import api from '../../services/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import StatCard from '../../components/common/StatCard';
 import {
-  HiOutlineCurrencyDollar,
+  HiOutlineCurrencyRupee,
   HiOutlineShoppingBag,
   HiOutlineClipboardCheck,
   HiOutlineClock,
@@ -47,7 +47,7 @@ const ShopAnalytics = () => {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        <StatCard icon={HiOutlineCurrencyDollar} label="Total Revenue" value={`$${analytics.totalRevenue.toFixed(2)}`} color="primary" />
+        <StatCard icon={HiOutlineCurrencyRupee} label="Total Revenue" value={`₹${analytics.totalRevenue.toFixed(2)}`} color="primary" />
         <StatCard icon={HiOutlineClipboardCheck} label="Completed Orders" value={analytics.completedOrders} color="green" />
         <StatCard icon={HiOutlineClock} label="Pending Orders" value={analytics.pendingOrders} color="accent" />
         <StatCard icon={HiOutlineShoppingBag} label="Items Sold" value={analytics.totalItemsSold} color="blue" />

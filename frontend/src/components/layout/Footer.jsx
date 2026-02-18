@@ -53,9 +53,6 @@ const Footer = () => {
           <p className="text-sm text-gray-400">
             &copy; {new Date().getFullYear()} Surplify. All rights reserved.
           </p>
-          <p className="text-sm text-gray-400 flex items-center gap-1">
-            Made with <HiOutlineHeart className="w-4 h-4 text-red-400" /> to fight food waste
-          </p>
         </div>
       </div>
     </footer>

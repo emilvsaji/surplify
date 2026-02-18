@@ -16,6 +16,7 @@ const ManageFood = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingFood, setEditingFood] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [shopInfo, setShopInfo] = useState({ missing: false, approvalStatus: null, isBlocked: false });
 
   const emptyForm = {
     foodName: '',
@@ -31,21 +32,57 @@ const ManageFood = () => {
   const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
-    fetchFoods();
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    await Promise.all([fetchShopInfo(), fetchFoods()]);
+    setLoading(false);
+  };
 
   const fetchFoods = async () => {
     try {
       const res = await api.get('/shop/foods');
-      setFoods(res.data.foods);
+      setFoods(res.data.foods || []);
+      if (res.data.shopMissing) {
+        setShopInfo((prev) => ({ ...prev, missing: true }));
+      }
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to load food items');
-    } finally {
-      setLoading(false);
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Failed to load food items');
+    }
+  };
+
+  const fetchShopInfo = async () => {
+    try {
+      const res = await api.get('/shop/my-shop');
+      setShopInfo({
+        missing: false,
+        approvalStatus: res.data.shop?.approvalStatus || null,
+        isBlocked: Boolean(res.data.shop?.isBlocked),
+      });
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setShopInfo({ missing: true, approvalStatus: null, isBlocked: false });
+      } else {
+        toast.error(err.response?.data?.message || 'Could not fetch shop details');
+      }
     }
   };
 
   const openAdd = () => {
+    if (shopInfo.missing) {
+      toast.error('Register your shop before adding items');
+      return;
+    }
+    if (shopInfo.approvalStatus && shopInfo.approvalStatus !== 'approved') {
+      toast.error('Your shop is not approved yet');
+      return;
+    }
+    if (shopInfo.isBlocked) {
+      toast.error('Your shop is blocked');
+      return;
+    }
     setEditingFood(null);
     setForm(emptyForm);
     setShowModal(true);
@@ -71,6 +108,19 @@ const ManageFood = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
+      if (shopInfo.missing) {
+        toast.error('Please register your shop before adding items');
+        return;
+      }
+      if (shopInfo.isBlocked) {
+        toast.error('Your shop is blocked');
+        return;
+      }
+      if (shopInfo.approvalStatus && shopInfo.approvalStatus !== 'approved') {
+        toast.error('Your shop is not approved yet');
+        return;
+      }
+
       if (editingFood) {
         await api.put(`/shop/food/${editingFood._id}`, form);
         toast.success('Food item updated');
@@ -81,7 +131,7 @@ const ManageFood = () => {
       setShowModal(false);
       fetchFoods();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Operation failed');
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Operation failed');
     } finally {
       setSubmitting(false);
     }
@@ -110,14 +160,36 @@ const ManageFood = () => {
 
   if (loading) return <LoadingSpinner />;
 
+  if (shopInfo.missing) {
+    return (
+      <div className="card p-10 text-center">
+        <h1 className="section-title mb-2">No shop found</h1>
+        <p className="section-subtitle mb-6">Register your shop to add and manage food items.</p>
+        <a href="/shop/register" className="btn-primary">Go to Shop Registration</a>
+      </div>
+    );
+  }
+
+  const shopRestricted = shopInfo.isBlocked || (shopInfo.approvalStatus && shopInfo.approvalStatus !== 'approved');
+  const restrictionMessage = shopInfo.isBlocked
+    ? 'Your shop is blocked. Contact support to resolve this.'
+    : shopInfo.approvalStatus && shopInfo.approvalStatus !== 'approved'
+      ? 'Your shop is pending approval. You can view items but cannot add new ones yet.'
+      : '';
+
   return (
     <div>
+      {shopRestricted && (
+        <div className="card bg-amber-50 border border-amber-200 text-amber-800 mb-4">
+          {restrictionMessage}
+        </div>
+      )}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="section-title">Manage Food Items</h1>
           <p className="section-subtitle">{foods.length} item{foods.length !== 1 ? 's' : ''} listed</p>
         </div>
-        <button onClick={openAdd} className="btn-primary gap-2">
+        <button onClick={openAdd} disabled={shopRestricted} className={`btn-primary gap-2 ${shopRestricted ? 'opacity-70 cursor-not-allowed' : ''}`}>
           <HiOutlinePlusCircle className="w-5 h-5" />
           Add Item
         </button>
@@ -128,7 +200,7 @@ const ManageFood = () => {
           <HiOutlinePhotograph className="w-16 h-16 text-gray-200 mx-auto mb-4" />
           <h3 className="font-semibold text-gray-900 mb-1">No food items yet</h3>
           <p className="text-sm text-gray-500 mb-4">Start by adding your first surplus food item.</p>
-          <button onClick={openAdd} className="btn-primary btn-sm gap-1">
+          <button onClick={openAdd} disabled={shopRestricted} className={`btn-primary btn-sm gap-1 ${shopRestricted ? 'opacity-70 cursor-not-allowed' : ''}`}>
             <HiOutlinePlusCircle className="w-4 h-4" />
             Add Your First Item
           </button>
@@ -154,8 +226,8 @@ const ManageFood = () => {
               <div className="p-4">
                 <h3 className="font-semibold text-gray-900 truncate">{food.foodName}</h3>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-lg font-bold text-primary-700">${food.discountedPrice?.toFixed(2)}</span>
-                  <span className="text-sm text-gray-400 line-through">${food.originalPrice?.toFixed(2)}</span>
+                  <span className="text-lg font-bold text-primary-700">₹{food.discountedPrice?.toFixed(2)}</span>
+                  <span className="text-sm text-gray-400 line-through">₹{food.originalPrice?.toFixed(2)}</span>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">Stock: {food.quantityAvailable}</p>
 

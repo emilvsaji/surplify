@@ -71,7 +71,7 @@ const Cart = () => {
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-gray-900 truncate">{item.foodName}</h3>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  ${item.discountedPrice?.toFixed(2)} each
+                  ₹{item.discountedPrice?.toFixed(2)} each
                 </p>
               </div>
 
@@ -94,7 +94,7 @@ const Cart = () => {
 
               <div className="text-right">
                 <p className="font-bold text-gray-900">
-                  ${(item.discountedPrice * item.quantity).toFixed(2)}
+                  ₹{(item.discountedPrice * item.quantity).toFixed(2)}
                 </p>
                 <button
                   onClick={() => removeFromCart(item._id)}
@@ -119,7 +119,7 @@ const Cart = () => {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between text-gray-600">
                 <span>Subtotal ({cartCount} items)</span>
-                <span className="font-medium">${cartTotal.toFixed(2)}</span>
+                <span className="font-medium">₹{cartTotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Service Fee</span>
@@ -127,7 +127,7 @@ const Cart = () => {
               </div>
               <div className="border-t border-gray-100 pt-3 flex justify-between">
                 <span className="font-semibold text-gray-900">Total</span>
-                <span className="text-xl font-bold text-primary-700">${cartTotal.toFixed(2)}</span>
+                <span className="text-xl font-bold text-primary-700">₹{cartTotal.toFixed(2)}</span>
               </div>
             </div>
 

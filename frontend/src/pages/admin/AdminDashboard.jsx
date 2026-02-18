@@ -6,7 +6,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 import {
   HiOutlineUserGroup,
   HiOutlineOfficeBuilding,
-  HiOutlineCurrencyDollar,
+  HiOutlineCurrencyRupee,
   HiOutlineShoppingBag,
   HiOutlineClipboardCheck,
   HiOutlineSparkles,
@@ -58,7 +58,7 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard icon={HiOutlineUserGroup} label="Total Users" value={analytics.totalUsers} color="blue" />
         <StatCard icon={HiOutlineOfficeBuilding} label="Active Shops" value={analytics.activeShops} color="green" />
-        <StatCard icon={HiOutlineCurrencyDollar} label="Total Revenue" value={`$${analytics.totalRevenue.toFixed(2)}`} color="primary" />
+        <StatCard icon={HiOutlineCurrencyRupee} label="Total Revenue" value={`₹${analytics.totalRevenue.toFixed(2)}`} color="primary" />
         <StatCard icon={HiOutlineSparkles} label="Food Saved" value={`${analytics.totalFoodSaved} items`} color="accent" />
       </div>
 
@@ -79,7 +79,7 @@ const AdminDashboard = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
+                <Tooltip formatter={(value) => `₹${value.toFixed(2)}`} />
                 <Bar dataKey="revenue" fill="#22c55e" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -147,7 +147,7 @@ const AdminDashboard = () => {
                     <td className="py-3 font-medium text-gray-900">#{order._id?.slice(-6).toUpperCase()}</td>
                     <td className="py-3 text-gray-600">{order.userName || 'N/A'}</td>
                     <td className="py-3 text-gray-600">{order.shopName || 'N/A'}</td>
-                    <td className="py-3 font-medium text-gray-900">${order.totalAmount?.toFixed(2)}</td>
+                    <td className="py-3 font-medium text-gray-900">₹{order.totalAmount?.toFixed(2)}</td>
                     <td className="py-3"><StatusBadge status={order.orderStatus} /></td>
                     <td className="py-3 text-gray-500">
                       {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}

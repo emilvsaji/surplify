@@ -2,7 +2,12 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import mongo
 from utils.decorators import role_required
-from utils.helpers import serialize_doc
+from utils.helpers import (
+    serialize_doc,
+    success_response,
+    error_response,
+    ensure_objectid,
+)
 from bson import ObjectId
 from datetime import datetime
 
@@ -20,7 +25,7 @@ def get_all_users():
         query["role"] = role
 
     users = list(mongo.db.users.find(query, {"password": 0}).sort("createdAt", -1))
-    return jsonify({"users": serialize_doc(users)}), 200
+    return success_response("Users fetched", {"users": serialize_doc(users)})
 
 
 @admin_bp.route("/shops", methods=["GET"])
@@ -40,7 +45,7 @@ def get_all_shops():
         if owner:
             shop["owner"] = serialize_doc(owner)
 
-    return jsonify({"shops": serialize_doc(shops)}), 200
+    return success_response("Shops fetched", {"shops": serialize_doc(shops)})
 
 
 @admin_bp.route("/approve-shop/<shop_id>", methods=["PUT"])
@@ -48,21 +53,25 @@ def get_all_shops():
 @role_required("admin")
 def approve_shop(shop_id):
     """Approve or reject a shop."""
-    data = request.get_json()
+    data = request.get_json() or {}
     status = data.get("status")  # approved or rejected
 
+    oid = ensure_objectid(shop_id)
+    if not oid:
+        return error_response("Invalid shop id", 400)
+
     if status not in ["approved", "rejected"]:
-        return jsonify({"error": "Status must be 'approved' or 'rejected'"}), 400
+        return error_response("Status must be 'approved' or 'rejected'", 400)
 
     result = mongo.db.shops.update_one(
-        {"_id": ObjectId(shop_id)},
+        {"_id": oid},
         {"$set": {"approvalStatus": status}}
     )
 
     if result.modified_count == 0:
-        return jsonify({"error": "Shop not found or status unchanged"}), 404
+        return error_response("Shop not found or status unchanged", 404)
 
-    return jsonify({"message": f"Shop {status} successfully"}), 200
+    return success_response(f"Shop {status} successfully")
 
 
 @admin_bp.route("/block-user/<user_id>", methods=["PUT"])
@@ -70,16 +79,20 @@ def approve_shop(shop_id):
 @role_required("admin")
 def block_user(user_id):
     """Block or unblock a user."""
-    data = request.get_json()
+    data = request.get_json() or {}
     blocked = data.get("isBlocked", True)
 
+    oid = ensure_objectid(user_id)
+    if not oid:
+        return error_response("Invalid user id", 400)
+
     result = mongo.db.users.update_one(
-        {"_id": ObjectId(user_id)},
+        {"_id": oid},
         {"$set": {"isBlocked": blocked}}
     )
 
     if result.modified_count == 0:
-        return jsonify({"error": "User not found or status unchanged"}), 404
+        return error_response("User not found or status unchanged", 404)
 
     # If user is a shop owner, also block/unblock their shop
     if blocked:
@@ -94,7 +107,7 @@ def block_user(user_id):
         )
 
     action = "blocked" if blocked else "unblocked"
-    return jsonify({"message": f"User {action} successfully"}), 200
+    return success_response(f"User {action} successfully")
 
 
 @admin_bp.route("/block-shop/<shop_id>", methods=["PUT"])
@@ -102,19 +115,26 @@ def block_user(user_id):
 @role_required("admin")
 def block_shop(shop_id):
     """Block or unblock a shop."""
-    data = request.get_json()
+    data = request.get_json() or {}
     blocked = data.get("isBlocked", True)
 
+    oid = ensure_objectid(shop_id)
+    if not oid:
+        return error_response("Invalid shop id", 400)
+
     result = mongo.db.shops.update_one(
-        {"_id": ObjectId(shop_id)},
+        {"_id": oid},
         {"$set": {"isBlocked": blocked}}
     )
 
     if result.modified_count == 0:
-        return jsonify({"error": "Shop not found or status unchanged"}), 404
+        return error_response("Shop not found or status unchanged", 404)
+
+    # Keep food items consistent with shop block state
+    mongo.db.food_items.update_many({"shopId": oid}, {"$set": {"isActive": not blocked}})
 
     action = "blocked" if blocked else "unblocked"
-    return jsonify({"message": f"Shop {action} successfully"}), 200
+    return success_response(f"Shop {action} successfully")
 
 
 @admin_bp.route("/orders", methods=["GET"])
@@ -137,7 +157,7 @@ def get_all_orders():
         if shop:
             order["shopName"] = shop["shopName"]
 
-    return jsonify({"orders": serialize_doc(orders)}), 200
+    return success_response("Orders fetched", {"orders": serialize_doc(orders)})
 
 
 @admin_bp.route("/analytics", methods=["GET"])
@@ -200,7 +220,7 @@ def get_analytics():
             ts["shopName"] = shop["shopName"]
         ts["_id"] = str(ts["_id"])
 
-    return jsonify({
+    return success_response("Analytics fetched", {
         "analytics": {
             "totalUsers": total_users,
             "totalShopOwners": total_shop_owners,
@@ -218,4 +238,4 @@ def get_analytics():
             "recentOrders": serialize_doc(recent_orders),
             "topShops": top_shops,
         }
-    }), 200
+    })
