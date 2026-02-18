@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.env
+venv/
+env/
+
+# Build
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env.local
+.env.production
+.env.development
+.env.test
+.env.*
+
+# Python env
+.venv
+
+# Secrets and keys
+*.pem
+*.key
+*.p12
+*.pfx
+*.asc
+secrets.json
+local_settings.py
+instance/
+
+# Databases
+*.sqlite3
+*.sqlite
+*.db
+*-journal
+
+# Logs
+*.log
+logs/
+
+# Coverage / build artifacts
+.coverage
+dist/
+*.egg-info/
