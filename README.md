@@ -5,6 +5,7 @@
 Surplify connects restaurants and hotels with customers by listing surplus food at discounted prices. The stack is split into a Flask REST API with MongoDB plus a React/Vite/Tailwind frontend.
 
 If you want step-by-step install/run instructions, see the dedicated setup guide in [SETUP.md](SETUP.md).
+For complete report-ready technical documentation, see [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md).
 
 ---
 
