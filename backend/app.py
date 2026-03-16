@@ -31,7 +31,21 @@ def create_app():
     # Initialize extensions
     mongo.init_app(app)
     jwt.init_app(app)
-    CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+    CORS(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": [
+                    "http://localhost:3000",
+                    "http://localhost:3001",
+                    "http://127.0.0.1:3000",
+                    "http://127.0.0.1:3001",
+                ]
+            }
+        },
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+    )
     # Using 'threading' mode to support Python 3.13; 'eventlet' is incompatible
     socketio.init_app(app, cors_allowed_origins="*", async_mode="threading")
 

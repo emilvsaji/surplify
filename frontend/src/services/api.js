@@ -4,18 +4,31 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
+
+const PUBLIC_ENDPOINTS = ['/foods', '/foods/'];
+
+const isPublicRequest = (url = '') =>
+  PUBLIC_ENDPOINTS.some((endpoint) => url === endpoint || url.startsWith(`${endpoint}?`));
 
 // Request interceptor — attach JWT token
 api.interceptors.request.use(
   (config) => {
+    const method = (config.method || 'get').toLowerCase();
+    const requestUrl = config.url || '';
+    const isPublic = isPublicRequest(requestUrl);
     const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+
+    if (method !== 'get' && !(config.data instanceof FormData)) {
+      config.headers['Content-Type'] = 'application/json';
     }
+
+    if (token && !isPublic) {
+      config.headers.Authorization = `Bearer ${token}`;
+    } else if (config.headers?.Authorization) {
+      delete config.headers.Authorization;
+    }
+
     return config;
   },
   (error) => Promise.reject(error)

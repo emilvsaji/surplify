@@ -20,11 +20,11 @@ cd Surplify
 cd backend
 
 # Create and activate a virtual environment
-python -m venv venv
+python -m venv .venv
 # Windows
-venv\Scripts\activate
+.venv\Scripts\activate
 # Mac/Linux
-source venv/bin/activate
+source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -38,13 +38,17 @@ JWT_SECRET_KEY=change-this-in-production
 
 Seed the default admin user:
 ```bash
-python seed_admin.py
+# Recommended on Windows to avoid global Python conflicts:
+c:/Users/emils/OneDrive/Desktop/Projects/Surplify/.venv/Scripts/python.exe seed_admin.py
+# Or, after activation: python seed_admin.py
 # Creates admin@surplify.com / admin123
 ```
 
 Run the backend (Socket.IO + REST):
 ```bash
-python run.py
+# Recommended on Windows to avoid global Python conflicts:
+c:/Users/emils/OneDrive/Desktop/Projects/Surplify/.venv/Scripts/python.exe run.py
+# Or, after activation: python run.py
 # Serves on http://localhost:5000
 ```
 
@@ -74,9 +78,9 @@ npm run dev
 
 ## 6) Common commands
 Backend (from `backend`):
-- Activate venv: `venv\Scripts\activate` (Win) or `source venv/bin/activate` (Mac/Linux)
-- Run server: `python run.py`
-- Reseed admin: `python seed_admin.py`
+- Activate venv: `.venv\Scripts\activate` (Win) or `source .venv/bin/activate` (Mac/Linux)
+- Run server: `c:/Users/emils/OneDrive/Desktop/Projects/Surplify/.venv/Scripts/python.exe run.py` (recommended on Windows) or `python run.py` after activation
+- Reseed admin: `c:/Users/emils/OneDrive/Desktop/Projects/Surplify/.venv/Scripts/python.exe seed_admin.py` (recommended on Windows) or `python seed_admin.py` after activation
 
 Frontend (from `frontend`):
 - Start dev: `npm run dev`

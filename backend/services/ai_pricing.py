@@ -1,6 +1,14 @@
 import json
-import google.generativeai as genai
 from config import Config
+
+
+def _build_genai_client(api_key):
+    try:
+        from google import genai
+
+        return genai.Client(api_key=api_key)
+    except Exception:
+        return None
 
 
 def calculate_demand_metrics(db, category, shop_id=None):
@@ -98,8 +106,14 @@ def generate_ai_price_recommendation(food_data, demand_metrics):
             None,
         )
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.0-flash")
+    client = _build_genai_client(api_key)
+    if client is None:
+        return (
+            generate_fallback_price_recommendation(
+                food_data, demand_metrics
+            ),
+            None,
+        )
 
     prompt = f"""You are an AI food marketplace pricing assistant helping reduce food waste.
 
@@ -124,7 +138,7 @@ Return ONLY valid JSON in this exact format, no other text:
 {{"recommendedPrice": <number>, "discountPercent": <number>, "demandLevel": "<low|medium|high>", "reason": "<short explanation>"}}"""
 
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
         text = response.text.strip()
 
         # Strip markdown code fences if present

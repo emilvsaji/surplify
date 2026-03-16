@@ -8,6 +8,7 @@ import {
   HiOutlineUserGroup,
   HiOutlineOfficeBuilding,
   HiOutlineCog,
+  HiOutlineSparkles,
 } from 'react-icons/hi';
 
 import { CartProvider } from './context/CartContext';
@@ -34,6 +35,7 @@ import RegisterShop from './pages/shop/RegisterShop';
 import ManageFood from './pages/shop/ManageFood';
 import ShopOrders from './pages/shop/ShopOrders';
 import ShopAnalytics from './pages/shop/ShopAnalytics';
+import AIInsights from './pages/shop/AIInsights';
 
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -52,6 +54,7 @@ const shopLinks = [
   { path: '/shop', label: 'Dashboard', icon: HiOutlineChartBar, exact: true },
   { path: '/shop/foods', label: 'Manage Food', icon: HiOutlinePlusCircle },
   { path: '/shop/orders', label: 'Orders', icon: HiOutlineClipboardList },
+  { path: '/shop/ai-insights', label: 'AI Insights', icon: HiOutlineSparkles },
   { path: '/shop/register', label: 'My Shop', icon: HiOutlineOfficeBuilding },
 ];
 
@@ -107,6 +110,7 @@ function App() {
               <Route path="/shop" element={<ShopAnalytics />} />
               <Route path="/shop/foods" element={<ManageFood />} />
               <Route path="/shop/orders" element={<ShopOrders />} />
+              <Route path="/shop/ai-insights" element={<AIInsights />} />
               <Route path="/shop/register" element={<RegisterShop />} />
             </Route>
 

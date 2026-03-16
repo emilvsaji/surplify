@@ -81,10 +81,10 @@ VITE_API_URL=http://localhost:5000/api
 
 1) Backend
 	- `cd backend`
-	- `python -m venv venv` and activate
+	- `python -m venv .venv` and activate
 	- `pip install -r requirements.txt`
-	- create `.env` (see above) and run `python seed_admin.py`
-	- `python run.py` → http://localhost:5000
+	- create `.env` (see above) and run `c:/Users/emils/OneDrive/Desktop/Projects/Surplify/.venv/Scripts/python.exe seed_admin.py` (or `python seed_admin.py` after activation)
+	- `c:/Users/emils/OneDrive/Desktop/Projects/Surplify/.venv/Scripts/python.exe run.py` (or `python run.py` after activation) → http://localhost:5000
 
 2) Frontend
 	- `cd frontend`

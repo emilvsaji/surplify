@@ -13,6 +13,7 @@ from utils.helpers import (
 from bson import ObjectId
 from datetime import datetime
 from services.ai_pricing import generate_ai_price_recommendation, calculate_demand_metrics
+from services.ai_insights import generate_ai_insights
 
 shop_bp = Blueprint("shop", __name__)
 
@@ -396,3 +397,23 @@ def ai_recommend_price():
         return error_response(error, 500)
 
     return success_response("AI price recommendation generated", recommendation)
+
+
+@shop_bp.route("/ai/insights", methods=["GET"])
+@jwt_required()
+@role_required("shopowner")
+def ai_insights():
+    """Get AI-generated business insights for the current shop."""
+    user_id = get_jwt_identity()
+    shop = mongo.db.shops.find_one({"ownerId": ObjectId(user_id)})
+    if not shop:
+        return error_response("Register your shop first", 404)
+
+    if shop["approvalStatus"] != "approved":
+        return error_response("Your shop is not yet approved", 403)
+
+    insights, error = generate_ai_insights(mongo.db, shop)
+    if error:
+        return error_response(error, 500)
+
+    return success_response("AI insights generated", {"insights": insights})
