@@ -1,10 +1,25 @@
 from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from flask_pymongo import PyMongo
 from flask_socketio import SocketIO
+from pymongo import MongoClient
 
-mongo = PyMongo()
+
+class Mongo:
+    """Lightweight wrapper around PyMongo's MongoClient that mimics flask-pymongo's `mongo.db` interface."""
+
+    def __init__(self):
+        self.client = None
+        self.db = None
+
+    def init_app(self, app):
+        uri = app.config["MONGO_URI"]
+        self.client = MongoClient(uri)
+        # Extract the database name from the URI
+        self.db = self.client.get_default_database()
+
+
+mongo = Mongo()
 jwt = JWTManager()
 socketio = SocketIO()
 

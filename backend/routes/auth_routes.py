@@ -5,31 +5,6 @@ from utils.helpers import serialize_doc, success_response, error_response, valid
 from bson import ObjectId
 from datetime import datetime
 import bcrypt
-import os
-from pymongo import MongoClient
-from dotenv import load_dotenv
-
-load_dotenv()
-
-
-def get_db():
-    """Return a working DB handle. Prefer `mongo.db`, fall back to a raw MongoClient."""
-    try:
-        # If Flask-PyMongo has been initialized this will be a Database object
-        if getattr(mongo, "db", None) is not None:
-            return mongo.db
-    except Exception:
-        pass
-
-    # Fallback: create a temporary client using MONGO_URI from env
-    uri = os.getenv("MONGO_URI") or "mongodb://localhost:27017/surplify"
-    client = MongoClient(uri)
-    # get_default_database will use the database in the URI if present
-    try:
-        return client.get_default_database()
-    except Exception:
-        # As a final fallback, return the 'surplify' database
-        return client["surplify"]
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -45,7 +20,7 @@ def register():
     if data["role"] not in ["user", "shopowner"]:
         return error_response("Invalid role. Must be 'user' or 'shopowner'", 400)
 
-    db = get_db()
+    db = mongo.db
     if db.users.find_one({"email": data["email"]}):
         return error_response("Email already registered", 409)
 
@@ -85,7 +60,7 @@ def login():
     if not data.get("email") or not data.get("password"):
         return error_response("Email and password are required", 400)
 
-    db = get_db()
+    db = mongo.db
     user = db.users.find_one({"email": data["email"]})
     if not user or not bcrypt.checkpw(data["password"].encode("utf-8"), user["password"].encode("utf-8")):
         return error_response("Invalid email or password", 401)
@@ -113,7 +88,7 @@ def get_me():
     @jwt_required()
     def inner():
         user_id = get_jwt_identity()
-        db = get_db()
+        db = mongo.db
         user = db.users.find_one({"_id": ObjectId(user_id)})
         if not user:
             return error_response("User not found", 404)
