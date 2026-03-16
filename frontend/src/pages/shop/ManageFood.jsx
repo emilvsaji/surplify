@@ -8,7 +8,9 @@ import {
   HiOutlineTrash,
   HiOutlineX,
   HiOutlinePhotograph,
+  HiOutlineSparkles,
 } from 'react-icons/hi';
+import AIPricingCard from '../../components/ai/AIPricingCard';
 
 const ManageFood = () => {
   const [foods, setFoods] = useState([]);
@@ -17,6 +19,8 @@ const ManageFood = () => {
   const [editingFood, setEditingFood] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [shopInfo, setShopInfo] = useState({ missing: false, approvalStatus: null, isBlocked: false });
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState(null);
 
   const emptyForm = {
     foodName: '',
@@ -85,6 +89,7 @@ const ManageFood = () => {
     }
     setEditingFood(null);
     setForm(emptyForm);
+    setAiResult(null);
     setShowModal(true);
   };
 
@@ -101,6 +106,7 @@ const ManageFood = () => {
       imageURL: food.imageURL || '',
       category: food.category || 'other',
     });
+    setAiResult(null);
     setShowModal(true);
   };
 
@@ -155,6 +161,38 @@ const ManageFood = () => {
       fetchFoods();
     } catch {
       toast.error('Update failed');
+    }
+  };
+
+  const handleAiSuggest = async () => {
+    if (!form.foodName || !form.originalPrice || !form.quantityAvailable) {
+      toast.error('Fill in food name, original price and quantity first');
+      return;
+    }
+    setAiLoading(true);
+    setAiResult(null);
+    try {
+      const res = await api.post('/shop/ai/recommend-price', {
+        foodName: form.foodName,
+        originalPrice: parseFloat(form.originalPrice),
+        quantityAvailable: parseInt(form.quantityAvailable),
+        expiryTime: form.pickupEndTime || '',
+        category: form.category,
+      });
+      setAiResult(res.data.data || res.data);
+      toast.success('AI recommendation ready');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'AI pricing failed');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const applyAiPrice = () => {
+    if (aiResult?.recommendedPrice) {
+      setForm((prev) => ({ ...prev, discountedPrice: String(aiResult.recommendedPrice) }));
+      setAiResult(null);
+      toast.success('AI price applied');
     }
   };
 
@@ -298,6 +336,27 @@ const ManageFood = () => {
                   />
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={handleAiSuggest}
+                disabled={aiLoading}
+                className="btn-accent btn-sm gap-1.5 w-full"
+              >
+                <HiOutlineSparkles className="w-4 h-4" />
+                {aiLoading ? 'Getting AI Suggestion...' : 'AI Suggest Price'}
+              </button>
+
+              {aiResult && (
+                <AIPricingCard
+                  recommendedPrice={aiResult.recommendedPrice}
+                  discountPercent={aiResult.discountPercent}
+                  demandLevel={aiResult.demandLevel}
+                  reason={aiResult.reason}
+                  onApply={applyAiPrice}
+                  onDismiss={() => setAiResult(null)}
+                />
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Quantity Available *</label>

@@ -12,6 +12,7 @@ from utils.helpers import (
 )
 from bson import ObjectId
 from datetime import datetime
+from services.ai_pricing import generate_ai_price_recommendation, calculate_demand_metrics
 
 shop_bp = Blueprint("shop", __name__)
 
@@ -359,3 +360,39 @@ def shop_analytics():
             "totalRatings": shop.get("totalRatings", 0),
         }
     })
+
+
+@shop_bp.route("/ai/recommend-price", methods=["POST"])
+@jwt_required()
+@role_required("shopowner")
+def ai_recommend_price():
+    """Get AI-powered price recommendation for a food item."""
+    user_id = get_jwt_identity()
+    shop = mongo.db.shops.find_one({"ownerId": ObjectId(user_id)})
+    if not shop:
+        return error_response("Register your shop first", 404)
+
+    data = request.get_json() or {}
+    missing = validate_required(data, ["foodName", "originalPrice", "quantityAvailable", "category"])
+    if missing:
+        return error_response(f"Missing fields: {', '.join(missing)}", 400)
+
+    original_price = validate_positive_number(data.get("originalPrice"))
+    if original_price is None:
+        return error_response("Original price must be a positive number", 400)
+
+    food_data = {
+        "foodName": data["foodName"],
+        "originalPrice": original_price,
+        "quantityAvailable": data["quantityAvailable"],
+        "expiryTime": data.get("expiryTime", "Not specified"),
+        "category": data["category"],
+    }
+
+    demand_metrics = calculate_demand_metrics(mongo.db, data["category"], shop["_id"])
+    recommendation, error = generate_ai_price_recommendation(food_data, demand_metrics)
+
+    if error:
+        return error_response(error, 500)
+
+    return success_response("AI price recommendation generated", recommendation)

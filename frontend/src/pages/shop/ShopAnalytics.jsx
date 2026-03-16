@@ -9,6 +9,7 @@ import {
   HiOutlineClock,
   HiOutlineStar,
   HiOutlineChartBar,
+  HiOutlineSparkles,
 } from 'react-icons/hi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -96,6 +97,35 @@ const ShopAnalytics = () => {
           </div>
         </div>
       </div>
+
+      {/* AI Pricing Insight */}
+      {analytics.mostSoldFoods?.length > 0 && (
+        <div className="card p-6 mt-6 border-primary-200 bg-primary-50/30">
+          <div className="flex items-center gap-2 mb-4">
+            <HiOutlineSparkles className="w-5 h-5 text-primary-600" />
+            <h3 className="text-base font-semibold text-gray-900">AI Pricing Insight</h3>
+          </div>
+          <div className="space-y-3">
+            {analytics.mostSoldFoods.slice(0, 3).map((item, i) => {
+              const demandTag = item.count >= 10 ? 'High' : item.count >= 3 ? 'Medium' : 'Low';
+              const tagColor = demandTag === 'High' ? 'bg-green-100 text-green-700' : demandTag === 'Medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700';
+              const discountRange = demandTag === 'High' ? '25%–35%' : demandTag === 'Medium' ? '35%–45%' : '45%–55%';
+              return (
+                <div key={i} className="flex items-center justify-between p-3 bg-white rounded-xl">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{item._id}</p>
+                    <p className="text-xs text-gray-500">Suggested discount range: {discountRange}</p>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${tagColor}`}>
+                    {demandTag} demand
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-gray-400 mt-3">Based on your recent sales data. Use AI Suggest Price when adding items for precise recommendations.</p>
+        </div>
+      )}
     </div>
   );
 };
