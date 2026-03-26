@@ -75,7 +75,7 @@ Shop Owners can register their shops (subject to admin approval), list surplus f
 
 Admins can monitor platform-wide activity, approve or reject shop registrations, block/unblock users and shops, oversee all orders, and access analytics dashboards with charts and statistics.
 
-The backend is implemented with **Flask + MongoDB + JWT**, while the frontend is built with **React + Vite + Tailwind CSS**. The platform includes real-time Socket.IO event broadcasting, role-based access control, AI-powered features using Google Gemini 2.0 Flash, cart management with single-shop constraints, and comprehensive analytics dashboards with Recharts visualizations.
+The backend is implemented with **Flask + MongoDB + JWT**, while the frontend is built with **React + Vite + Tailwind CSS**. The platform includes real-time Socket.IO event broadcasting, roons.
 
 ---
 
