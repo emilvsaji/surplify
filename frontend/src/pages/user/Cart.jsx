@@ -18,8 +18,21 @@ const Cart = () => {
   const [billData, setBillData] = useState(null);
   const [placingOrder, setPlacingOrder] = useState(false);
 
+  const parseOrderDate = (value) => {
+    if (!value) return new Date();
+
+    if (typeof value === 'string') {
+      const hasTimezone = /([zZ]|[+\-]\d{2}:?\d{2})$/.test(value);
+      if (!hasTimezone && value.includes('T')) {
+        return new Date(`${value}Z`);
+      }
+    }
+
+    return new Date(value);
+  };
+
   const formatDateTime = (value) => {
-    const date = value ? new Date(value) : new Date();
+    const date = parseOrderDate(value);
     return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -189,52 +202,53 @@ const Cart = () => {
 
       {billData && (
         <div className="fixed inset-0 z-50 bg-black/50 p-4 sm:p-6 md:p-10 flex items-center justify-center">
-          <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-100 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                <HiOutlineCheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Order Bill</h3>
-                <p className="text-sm text-gray-500">Your order has been placed successfully.</p>
+          <div className="w-full max-w-xl bg-[#fdfbf7] rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
+            <div className="px-6 py-6 text-center border-b border-dashed border-gray-300">
+              <p className="text-[10px] tracking-[0.25em] text-gray-500 font-semibold">SURPLIFY BILLING</p>
+              <h3 className="text-xl font-bold text-gray-900 mt-2">{billData.shopName || 'Partner Shop'}</h3>
+              <p className="text-sm text-gray-600 mt-1">{billData.shopAddress || 'Shop address unavailable'}</p>
+              <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+                <HiOutlineCheckCircle className="w-4 h-4" />
+                Order Confirmed
               </div>
             </div>
 
-            <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
-              <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto font-mono text-[13px]">
+              <div className="grid grid-cols-2 gap-3 text-sm border-b border-dashed border-gray-300 pb-4">
                 <div>
-                  <p className="text-gray-500">Bill No.</p>
+                  <p className="text-gray-500 uppercase text-[11px]">Bill No</p>
                   <p className="font-semibold text-gray-900">#{billData._id?.slice(-6).toUpperCase()}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Date & Time</p>
+                  <p className="text-gray-500 uppercase text-[11px]">Date & Time</p>
                   <p className="font-semibold text-gray-900">{formatDateTime(billData.createdAt)}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Payment Status</p>
+                  <p className="text-gray-500 uppercase text-[11px]">Payment</p>
                   <p className="font-semibold text-gray-900 capitalize">{billData.paymentStatus || 'pending'}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Order Status</p>
+                  <p className="text-gray-500 uppercase text-[11px]">Order</p>
                   <p className="font-semibold text-gray-900 capitalize">{billData.orderStatus || 'pending'}</p>
                 </div>
               </div>
 
-              <div className="border border-gray-100 rounded-xl">
+              <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+                <div className="grid grid-cols-12 bg-gray-50 px-4 py-2 text-[11px] uppercase tracking-wide text-gray-500 font-semibold">
+                  <span className="col-span-6">Item</span>
+                  <span className="col-span-2 text-center">Qty</span>
+                  <span className="col-span-4 text-right">Amount</span>
+                </div>
                 {(billData.items || []).map((item, idx) => (
-                  <div key={`${item.foodId || item.foodName}-${idx}`} className="px-4 py-3 flex items-center justify-between border-b border-gray-100 last:border-b-0">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{item.foodName}</p>
-                      <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
-                    </div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {formatCurrency(Number(item.price || 0) * Number(item.quantity || 0))}
-                    </p>
+                  <div key={`${item.foodId || item.foodName}-${idx}`} className="grid grid-cols-12 px-4 py-3 border-t border-gray-100 items-center text-gray-800">
+                    <p className="col-span-6 truncate pr-2">{item.foodName}</p>
+                    <p className="col-span-2 text-center">{item.quantity}</p>
+                    <p className="col-span-4 text-right font-semibold">{formatCurrency(Number(item.price || 0) * Number(item.quantity || 0))}</p>
                   </div>
                 ))}
               </div>
 
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2 text-sm border-t border-dashed border-gray-300 pt-4">
                 <div className="flex items-center justify-between text-gray-600">
                   <span>Subtotal</span>
                   <span>{formatCurrency(billSubtotal)}</span>
@@ -243,16 +257,18 @@ const Cart = () => {
                   <span>Service Fee</span>
                   <span>{formatCurrency(0)}</span>
                 </div>
-                <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
-                  <span className="font-semibold text-gray-900">Total</span>
-                  <span className="text-lg font-bold text-primary-700">
+                <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
+                  <span className="font-semibold text-gray-900 text-base">Grand Total</span>
+                  <span className="text-lg font-bold text-gray-900">
                     {formatCurrency(billData.totalAmount)}
                   </span>
                 </div>
               </div>
+
+              <p className="text-center text-xs text-gray-500 pt-2">Thank you for dining with us</p>
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+            <div className="px-6 py-4 border-t border-gray-200 bg-white">
               <button onClick={closeBillPopup} className="btn-primary w-full">
                 OK
               </button>

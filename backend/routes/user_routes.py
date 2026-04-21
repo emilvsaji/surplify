@@ -156,6 +156,8 @@ def place_order():
         mongo.db.food_items.update_one({"_id": ObjectId(item["foodId"])}, {"$set": update})
 
     order_doc["_id"] = result.inserted_id
+    order_doc["shopName"] = shop.get("shopName", "")
+    order_doc["shopAddress"] = shop.get("address", "")
 
     # Emit socket event for real-time updates
     socketio.emit("new_order", {
