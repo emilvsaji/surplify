@@ -18,12 +18,31 @@ const ShopAnalytics = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const resolveAnalyticsPath = () => {
+      const baseUrl = (api.defaults.baseURL || '').replace(/\/+$/, '').toLowerCase();
+      // If base URL is already scoped to /api/shop, request /analytics directly.
+      if (baseUrl.endsWith('/api/shop')) return '/analytics';
+      return '/shop/analytics';
+    };
+
     const fetchAnalytics = async () => {
+      const primaryPath = resolveAnalyticsPath();
+      const fallbackPath = primaryPath === '/analytics' ? '/shop/analytics' : '/analytics';
+
       try {
-        const res = await api.get('/shop/analytics');
+        const res = await api.get(primaryPath);
         setAnalytics(res.data.analytics);
-      } catch {
-        // handle error silently
+      } catch (err) {
+        // Support environments where VITE_API_URL may include or exclude /shop.
+        if (err.response?.status === 404) {
+          try {
+            const res = await api.get(fallbackPath);
+            setAnalytics(res.data.analytics);
+            return;
+          } catch {
+            // fall through to generic failure state
+          }
+        }
       } finally {
         setLoading(false);
       }
