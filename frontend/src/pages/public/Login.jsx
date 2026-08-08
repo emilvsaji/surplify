@@ -22,7 +22,7 @@ const Login = () => {
         default: navigate('/dashboard');
       }
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Login failed');
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Login failed');
     } finally {
       setLoading(false);
     }

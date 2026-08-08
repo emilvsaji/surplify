@@ -34,7 +34,7 @@ const ShopOrders = () => {
       toast.success(`Order marked as ${status}`);
       fetchOrders();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Update failed');
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Update failed');
     }
   };
 

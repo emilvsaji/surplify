@@ -35,7 +35,7 @@ def success_response(message, data=None, status=200):
 
 
 def error_response(message, status=400, data=None):
-    body = {"success": False, "message": message}
+    body = {"success": False, "message": message, "error": message}
     if data is not None:
         body["data"] = data
         if isinstance(data, dict):

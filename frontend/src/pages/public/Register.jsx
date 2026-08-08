@@ -37,7 +37,7 @@ const Register = () => {
         default: navigate('/dashboard');
       }
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Registration failed');
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Registration failed');
     } finally {
       setLoading(false);
     }

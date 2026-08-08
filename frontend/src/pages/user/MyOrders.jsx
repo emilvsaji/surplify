@@ -9,6 +9,7 @@ const MyOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [billOrder, setBillOrder] = useState(null);
+  const GST_RATE = 0.05;
 
   useEffect(() => {
     fetchOrders();
@@ -32,7 +33,7 @@ const MyOrders = () => {
       toast.success('Order cancelled');
       fetchOrders();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to cancel');
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Failed to cancel');
     }
   };
 
@@ -61,6 +62,124 @@ const MyOrders = () => {
   };
 
   const formatCurrency = (value) => `₹${Number(value || 0).toFixed(2)}`;
+
+  const getBillTotals = (order, fallbackGross = 0) => {
+    const grossAmount = Number(order?.totalAmount ?? fallbackGross) || 0;
+    const taxableAmount = grossAmount > 0 ? grossAmount / (1 + GST_RATE) : 0;
+    const gstAmount = grossAmount - taxableAmount;
+
+    return {
+      taxableAmount,
+      gstAmount,
+      grossAmount,
+    };
+  };
+
+  const escapeHtml = (value) =>
+    String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+  const printBill = (order, fallbackGross = 0) => {
+    if (!order) return;
+
+    const { taxableAmount, gstAmount, grossAmount } = getBillTotals(order, fallbackGross);
+    const rows = (order.items || [])
+      .map((item) => {
+        const lineTotal = Number(item.price || 0) * Number(item.quantity || 0);
+        return `
+          <tr>
+            <td>${escapeHtml(item.foodName)}</td>
+            <td style="text-align:center;">${escapeHtml(item.quantity)}</td>
+            <td style="text-align:right;">${formatCurrency(lineTotal)}</td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    const printWindow = window.open('', '_blank', 'width=480,height=760');
+    if (!printWindow) {
+      toast.error('Please allow popups to print the bill');
+      return;
+    }
+
+    const html = `
+      <html>
+        <head>
+          <title>Order Bill</title>
+          <style>
+            body { font-family: 'Courier New', monospace; padding: 16px; color: #222; }
+            .center { text-align: center; }
+            .muted { color: #666; font-size: 12px; }
+            .top-gap { margin-top: 10px; }
+            .divider { border-top: 1px dashed #999; margin: 10px 0; }
+            table { width: 100%; border-collapse: collapse; font-size: 13px; }
+            th, td { padding: 6px 0; }
+            th { border-bottom: 1px solid #ddd; font-size: 12px; text-transform: uppercase; color: #555; }
+            .totals { font-size: 13px; }
+            .totals div { display: flex; justify-content: space-between; margin: 4px 0; }
+            .grand { font-weight: 700; font-size: 15px; }
+          </style>
+        </head>
+        <body>
+          <div class="center">
+            <div class="muted">SURPLIFY BILLING</div>
+            <h2 style="margin:6px 0 2px;">${escapeHtml(order.shopName || 'Partner Shop')}</h2>
+            <div class="muted">${escapeHtml(order.shopAddress || 'Shop address unavailable')}</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="totals">
+            <div><span>Bill No</span><span>#${escapeHtml(order._id?.slice(-6).toUpperCase())}</span></div>
+            <div><span>Date & Time</span><span>${escapeHtml(formatDateTime(order.createdAt))}</span></div>
+            <div><span>Payment</span><span>${escapeHtml(order.paymentStatus || 'pending')}</span></div>
+            <div><span>Order</span><span>${escapeHtml(order.orderStatus || 'pending')}</span></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align:left;">Item</th>
+                <th style="text-align:center;">Qty</th>
+                <th style="text-align:right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+
+          <div class="divider"></div>
+
+          <div class="totals">
+            <div><span>Taxable Amount</span><span>${formatCurrency(taxableAmount)}</span></div>
+            <div><span>GST (5%)</span><span>${formatCurrency(gstAmount)}</span></div>
+            <div class="grand"><span>Grand Total</span><span>${formatCurrency(grossAmount)}</span></div>
+          </div>
+
+          <div class="divider"></div>
+          <div class="center muted top-gap">Thank you for dining with us</div>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  };
+
+  const billOrderSubtotal = (billOrder?.items || []).reduce(
+    (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
+    0
+  );
+  const billSummary = getBillTotals(billOrder, billOrderSubtotal);
 
   if (loading) return <LoadingSpinner text="Loading your orders..." />;
 
@@ -202,18 +321,31 @@ const MyOrders = () => {
                 ))}
               </div>
 
-              <div className="pt-2 border-t border-dashed border-gray-300 flex items-center justify-between">
-                <span className="font-semibold text-gray-900 text-base">Grand Total</span>
-                <span className="text-lg font-bold text-gray-900">
-                  {formatCurrency(billOrder.totalAmount)}
-                </span>
+              <div className="space-y-2 text-sm border-t border-dashed border-gray-300 pt-4">
+                <div className="flex items-center justify-between text-gray-600">
+                  <span>Taxable Amount</span>
+                  <span>{formatCurrency(billSummary.taxableAmount)}</span>
+                </div>
+                <div className="flex items-center justify-between text-gray-600">
+                  <span>GST (5%)</span>
+                  <span>{formatCurrency(billSummary.gstAmount)}</span>
+                </div>
+                <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
+                  <span className="font-semibold text-gray-900 text-base">Grand Total</span>
+                  <span className="text-lg font-bold text-gray-900">
+                    {formatCurrency(billSummary.grossAmount)}
+                  </span>
+                </div>
               </div>
 
               <p className="text-center text-xs text-gray-500 pt-2">Thank you for dining with us</p>
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-200 bg-white">
-              <button onClick={() => setBillOrder(null)} className="btn-primary w-full">
+            <div className="px-6 py-4 border-t border-gray-200 bg-white flex flex-col sm:flex-row gap-3">
+              <button onClick={() => printBill(billOrder, billOrderSubtotal)} className="btn-secondary w-full sm:w-1/2">
+                Print Bill
+              </button>
+              <button onClick={() => setBillOrder(null)} className="btn-primary w-full sm:w-1/2">
                 OK
               </button>
             </div>

@@ -39,7 +39,7 @@ const RegisterShop = () => {
       setShop(res.data.shop);
       toast.success('Shop registration submitted!');
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Registration failed');
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Registration failed');
     } finally {
       setSubmitting(false);
     }
