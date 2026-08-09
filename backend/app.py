@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -31,20 +32,36 @@ def create_app():
     # Initialize extensions
     mongo.init_app(app)
     jwt.init_app(app)
+
+    # Configure CORS origins
+    cors_env = os.getenv("CORS_ORIGINS", "")
+    if cors_env == "*":
+        allowed_origins = "*"
+    else:
+        default_origins = [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:5173",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3001",
+            "http://127.0.0.1:5173",
+            "http://localhost:4173",
+            "http://127.0.0.1:4173",
+        ]
+        frontend_url = os.getenv("FRONTEND_URL")
+        if frontend_url:
+            default_origins.append(frontend_url.rstrip("/"))
+        if cors_env:
+            for origin in cors_env.split(","):
+                if origin.strip():
+                    default_origins.append(origin.strip().rstrip("/"))
+        allowed_origins = list(set(default_origins))
+
     CORS(
         app,
         resources={
             r"/api/*": {
-                "origins": [
-                    "http://localhost:3000",
-                    "http://localhost:3001",
-                    "http://localhost:5173",
-                    "http://127.0.0.1:3000",
-                    "http://127.0.0.1:3001",
-                    "http://127.0.0.1:5173",
-                    "http://localhost:4173",
-                    "http://127.0.0.1:4173",
-                ]
+                "origins": allowed_origins,
             }
         },
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -52,6 +69,7 @@ def create_app():
     )
     # Using 'threading' mode to support Python 3.13; 'eventlet' is incompatible
     socketio.init_app(app, cors_allowed_origins="*", async_mode="threading")
+
 
     # Register blueprints
     from routes.auth_routes import auth_bp
