@@ -60,18 +60,17 @@ def create_app():
     CORS(
         app,
         resources={
-            r"/api/*": {
+            r"/*": {
                 "origins": allowed_origins,
             }
         },
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Content-Type", "Authorization"],
+        allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
     )
     # Using 'threading' mode to support Python 3.13; 'eventlet' is incompatible
     socketio.init_app(app, cors_allowed_origins="*", async_mode="threading")
 
-
-    # Register blueprints
+    # Register blueprints with standard /api prefix
     from routes.auth_routes import auth_bp
     from routes.user_routes import user_bp
     from routes.shop_routes import shop_bp
@@ -82,9 +81,17 @@ def create_app():
     app.register_blueprint(shop_bp, url_prefix="/api/shop")
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
 
-    # Health check
+    # Fallback aliases in case client requests omit /api prefix
+    app.register_blueprint(auth_bp, url_prefix="/auth", name="auth_bp_alias")
+    app.register_blueprint(shop_bp, url_prefix="/shop", name="shop_bp_alias")
+    app.register_blueprint(admin_bp, url_prefix="/admin", name="admin_bp_alias")
+
+    # Health check endpoints
+    @app.route("/")
+    @app.route("/health")
     @app.route("/api/health")
     def health():
         return {"status": "ok", "message": "Surplify API is running"}, 200
 
     return app
+

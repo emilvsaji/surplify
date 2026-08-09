@@ -1,10 +1,31 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const formatApiUrl = (rawUrl) => {
+
+  let url = (rawUrl || '').trim();
+  if (!url) {
+    return 'http://localhost:5000/api';
+  }
+  // Ensure protocol is present if not a relative proxy path
+  if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('/')) {
+    url = `https://${url}`;
+  }
+  // Strip trailing slashes
+  url = url.replace(/\/+$/, '');
+
+  // Ensure /api suffix is present
+  if (!url.endsWith('/api')) {
+    url = `${url}/api`;
+  }
+  return url;
+};
+
+const API_URL = formatApiUrl(import.meta.env.VITE_API_URL);
 
 const api = axios.create({
   baseURL: API_URL,
 });
+
 
 const PUBLIC_ENDPOINTS = ['/foods', '/foods/'];
 
